@@ -1,6 +1,7 @@
 # Todos
 - Move packages to libs
 - Rand not so rand
+- thiserror
 
 # Ideas
 ## Possible Backends

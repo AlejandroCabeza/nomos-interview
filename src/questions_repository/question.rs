@@ -1,5 +1,7 @@
 use image::{DynamicImage};
 
+use crate::questions_repository::errors::QuestionsRepositoryError;
+
 #[derive(Debug)]
 pub enum Question {
     IdentifyImage(IdentifyImage),
@@ -25,10 +27,10 @@ impl IdentifyImage {
         &self.image_url
     }
 
-    pub async fn image(&self) -> Result<DynamicImage, String> {
-        let response = reqwest::get(&self.image_url).await.map_err(|error| format!("Failed fetching image: {}", error));
-        let bytes = response?.bytes().await.map_err(|error| format!("Failed reading image: {}", error));
-        image::load_from_memory(&bytes?).map_err(|error| format!("Failed reading image: {}", error))
+    pub async fn image(&self) -> Result<DynamicImage, QuestionsRepositoryError> {
+        let response = reqwest::get(&self.image_url).await.map_err(QuestionsRepositoryError::FailedFetchingImage);
+        let bytes = response?.bytes().await.map_err(QuestionsRepositoryError::FailedParsingImage);
+        image::load_from_memory(&bytes?).map_err(QuestionsRepositoryError::FailedLoadingImage)
     }
 
     pub fn answer(&self) -> &str {

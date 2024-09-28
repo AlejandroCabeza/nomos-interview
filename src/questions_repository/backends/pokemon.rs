@@ -3,7 +3,7 @@ use crate::questions_repository::backends::backend::QuestionsRepositoryBackend;
 use crate::questions_repository::question::{Question, IdentifyImage};
 use reqwest;
 use serde::Deserialize;
-
+use crate::questions_repository::backends::errors::BackendError;
 
 #[derive(Deserialize, Debug)]
 struct Pokemon {
@@ -17,6 +17,7 @@ struct PokemonSprites {
     front_default: String,
 }
 
+#[derive(Debug)]
 pub struct PokemonBackend {
     id_min: u16,
     id_max: u16,
@@ -56,10 +57,10 @@ impl PokemonBackend {
 
 #[async_trait::async_trait]
 impl QuestionsRepositoryBackend for PokemonBackend {
-    async fn next(&self) -> Result<Question, String> {
+    async fn next(&self) -> Result<Question, BackendError> {
         let url = self.get_url_for_random_pokemon();
-        let response = reqwest::get(&url).await.map_err(|error| format!("Fetching next Pokemon failed: {}", error))?;
-        let body = response.text().await.map_err(|error| format!("Parsing pokemon failed: {}", error))?;
+        let response = reqwest::get(&url).await.map_err(BackendError::RequestError)?;
+        let body = response.text().await.map_err(BackendError::RequestError)?;
         Ok(self.build_question_from_body(body.as_str()))
     }
 }

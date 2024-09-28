@@ -1,11 +1,13 @@
 use overwatch_rs::DynError;
 use overwatch_rs::services::handle::ServiceStateHandle;
 use overwatch_rs::services::{ServiceCore, ServiceData, ServiceId};
+use overwatch_rs::services::relay::{InboundRelay, OutboundRelay};
 use overwatch_rs::services::state::{NoOperator, NoState};
+use viuer::{print as print_image_in_terminal, Config};
 use tracing::{error};
+use crate::cli::errors::CliError;
 use crate::questions_repository::question::{IdentifyImage, Question};
 use crate::questions_repository::service::{QuestionsRepository};
-use viuer::{print as print_image_in_terminal, Config};
 use crate::cli::messages::CliMessage;
 use crate::cli::utils::{clear_screen, get_input, press_enter_to_continue};
 use crate::questions_repository::messages::QuestionsRepositoryMessage;
@@ -36,70 +38,71 @@ impl ServiceCore for Cli {
         } = self;
         let image_config = get_image_config();
 
-        let questions_repository_network_relay = service_state.overwatch_handle.relay::<QuestionsRepository>().connect().await.expect("Failed fetching relay to QuestionsRepository from Cli.");
+        let questions_repository_network_relay = service_state.overwatch_handle.relay::<QuestionsRepository>().connect().await?;
         let mut inbound_relay = service_state.inbound_relay;
 
-        let cli_loop = async {
-            println!("Welcome to CliQuiz! To exit, type `quit`.");
-            loop {
-                // Request Question
-                if let Err(error) = questions_repository_network_relay.send(QuestionsRepositoryMessage::Request).await {
-                    // TODO: if more than 2 failures then exit? or maybe just warning.
-                    error!("# Could not send Request to QuestionsRepository: {:?}", error);
-                    continue
-                }
-
-                // Make Question
-                if let Some(message) = inbound_relay.recv().await {
-                    let expected_answer = match message {
-                        CliMessage::New(question) => {
-                            match question {
-                                Question::IdentifyImage(identify_image_question) => {
-                                    clear_screen();
-                                    match formulate_identify_image_question(&identify_image_question, &image_config).await {
-                                        Ok(answer) => answer,
-                                        Err(error) => {
-                                            println!("> An error happened. Let's try again!");
-                                            error!("Could not formulate IdentifyImageQuestion: {:?}", error);
-                                            continue
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    };
-
-                    // Parse Answer
-                    let answer_input = get_input();
-                    match answer_input {
-                        Ok(answer) => {
-                            let answer = answer.trim().to_ascii_lowercase();
-                            if answer == "quit" {
-                                println!("> You reached a score of: {}!", score);
-                                break
-                            }
-                            check_answer(answer, expected_answer, &mut score);
-                        }
-                        Err(error) => {
-                            println!("> Error parsing input");
-                            error!("Could not parse answer input: {}", error);
-                        }
-                    }
-                }
-            }
-            println!("> Exiting...")
-        };
-
-        cli_loop.await;
+        get_cli_service_loop(&questions_repository_network_relay, &mut inbound_relay, &image_config, &mut score).await;
 
         service_state.overwatch_handle.shutdown().await;
         Ok(())
     }
 }
 
-async fn formulate_identify_image_question(question: &IdentifyImage, image_config: &Config) -> Result<String, String> {
-    let image = question.image().await.map_err(|error| format!("Could not obtain image: {:?}", error))?;
-    print_image_in_terminal(&image, image_config).map_err(|error| format!("Could not print image: {:?}", error))?;
+async fn get_cli_service_loop(
+    questions_repository_network_relay: &OutboundRelay<QuestionsRepositoryMessage>,
+    inbound_relay: &mut InboundRelay<CliMessage>,
+    image_config: &Config,
+    score: &mut u16
+) {
+    println!("Welcome to CliQuiz! To exit, type `quit`.");
+    loop {
+        // Request Question
+        if let Err(error) = questions_repository_network_relay.send(QuestionsRepositoryMessage::Request).await {
+            // TODO: if more than 2 failures then exit? or maybe just warning.
+            error!("Could not send Request to QuestionsRepository: {:?}", error);
+            continue
+        }
+
+        // Make Question
+        if let Some(message) = inbound_relay.recv().await {
+            let expected_answer = match message {
+                CliMessage::New(Question::IdentifyImage(identify_image_question)) => {
+                    clear_screen();
+                    match formulate_identify_image_question(&identify_image_question, image_config).await {
+                        Ok(answer) => answer,
+                        Err(error) => {
+                            println!("> An error happened. Let's try again!");
+                            error!("Could not formulate IdentifyImageQuestion: {:?}", error);
+                            continue
+                        }
+                    }
+                }
+            };
+
+            // Parse Answer
+            let answer_input = get_input();
+            match answer_input {
+                Ok(answer) => {
+                    let answer = answer.trim().to_ascii_lowercase();
+                    if answer == "quit" {
+                        println!("> You reached a score of: {}!", score);
+                        break
+                    }
+                    check_answer(answer, expected_answer, score);
+                }
+                Err(error) => {
+                    println!("> Error parsing input");
+                    error!("Could not parse answer input: {}", error);
+                }
+            }
+        }
+    }
+    println!("> Exiting...")
+}
+
+async fn formulate_identify_image_question(question: &IdentifyImage, image_config: &Config) -> Result<String, CliError> {
+    let image = question.image().await.map_err(CliError::QuestionsRepositoryError)?;
+    print_image_in_terminal(&image, image_config).map_err(CliError::RenderError)?;
     println!("> {}", question.prompt());
     Ok(String::from(question.answer()))
 }

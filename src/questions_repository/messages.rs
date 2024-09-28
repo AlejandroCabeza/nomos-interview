@@ -1,9 +1,10 @@
+use std::fmt::{Debug};
 use overwatch_rs::services::relay::RelayMessage;
-use crate::questions_repository::backends::backend::QuestionsRepositoryBackend;
+use crate::questions_repository::backends::backend_message::BackendMessage;
 
 #[derive(Debug)]
 pub enum QuestionsRepositoryMessage {
-    ChangeBackend(Box<dyn QuestionsRepositoryBackend + Send>),
+    UpdateBackend(BackendMessage),
     Request
 }
 
