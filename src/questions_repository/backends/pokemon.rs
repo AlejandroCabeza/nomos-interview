@@ -7,7 +7,6 @@ use crate::questions_repository::backends::errors::BackendError;
 
 #[derive(Deserialize, Debug)]
 struct Pokemon {
-    id: u16,
     name: String,
     sprites: PokemonSprites
 }

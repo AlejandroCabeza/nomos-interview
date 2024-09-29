@@ -28,9 +28,9 @@ impl IdentifyImage {
     }
 
     pub async fn image(&self) -> Result<DynamicImage, QuestionsRepositoryError> {
-        let response = reqwest::get(&self.image_url).await.map_err(QuestionsRepositoryError::FailedFetchingImage);
-        let bytes = response?.bytes().await.map_err(QuestionsRepositoryError::FailedParsingImage);
-        image::load_from_memory(&bytes?).map_err(QuestionsRepositoryError::FailedLoadingImage)
+        let response = reqwest::get(&self.image_url).await.map_err(QuestionsRepositoryError::FetchingImage);
+        let bytes = response?.bytes().await.map_err(QuestionsRepositoryError::ParsingImage);
+        image::load_from_memory(&bytes?).map_err(QuestionsRepositoryError::LoadingImage)
     }
 
     pub fn answer(&self) -> &str {
