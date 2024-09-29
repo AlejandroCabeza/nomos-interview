@@ -1,6 +1,6 @@
 use image::{DynamicImage};
 
-use crate::questions_repository::errors::QuestionsRepositoryError;
+use crate::errors::QuestionsRepositoryError;
 
 #[derive(Debug)]
 pub enum Question {

@@ -1,9 +1,10 @@
 use rand::{Rng};
-use crate::questions_repository::backends::backend::QuestionsRepositoryBackend;
-use crate::questions_repository::question::{Question, IdentifyImage};
 use reqwest;
 use serde::Deserialize;
-use crate::questions_repository::backends::errors::BackendError;
+
+use crate::backends::backend::QuestionsRepositoryBackend;
+use crate::questions::{Question, IdentifyImage};
+use crate::backends::errors::BackendError;
 
 #[derive(Deserialize, Debug)]
 struct Pokemon {

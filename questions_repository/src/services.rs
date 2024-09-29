@@ -5,12 +5,11 @@ use overwatch_rs::services::relay::{InboundRelay, OutboundRelay};
 use overwatch_rs::services::state::{NoOperator, NoState};
 use tracing::error;
 
-use crate::cli::messages::CliMessage;
-use crate::cli::service::{Cli};
-use crate::questions_repository::backends::backend::QuestionsRepositoryBackend;
-use crate::questions_repository::backends::backend_message::BackendMessage;
-use crate::questions_repository::backends::pokemon::PokemonBackend;
-use crate::questions_repository::messages::QuestionsRepositoryMessage;
+use cli::{Cli, CliMessage};
+use crate::backends::backend::QuestionsRepositoryBackend;
+use crate::backends::backend_message::BackendMessage;
+use crate::backends::pokemon::PokemonBackend;
+use crate::messages::QuestionsRepositoryMessage;
 
 type BoxedBackend = Box<dyn QuestionsRepositoryBackend + Send>;
 

@@ -1,5 +1,5 @@
 use overwatch_rs::services::relay::RelayMessage;
-use crate::questions_repository::question::Question;
+use questions_repository::questions::Question;
 
 #[derive(Debug)]
 pub enum CliMessage {

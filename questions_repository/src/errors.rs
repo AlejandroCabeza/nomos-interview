@@ -1,6 +1,6 @@
 use image::ImageError;
 use thiserror::Error;
-use crate::questions_repository::backends::errors::BackendError;
+use crate::backends::errors::BackendError;
 
 #[derive(Error, Debug)]
 pub enum QuestionsRepositoryError {

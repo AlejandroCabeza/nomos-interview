@@ -1,5 +1,5 @@
-use crate::questions_repository::backends::errors::BackendError;
-use crate::questions_repository::question::Question;
+use crate::backends::errors::BackendError;
+use crate::questions::Question;
 
 #[async_trait::async_trait]
 pub trait QuestionsRepositoryBackend {

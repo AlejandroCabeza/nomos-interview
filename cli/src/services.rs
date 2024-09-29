@@ -5,12 +5,12 @@ use overwatch_rs::services::relay::{InboundRelay, OutboundRelay};
 use overwatch_rs::services::state::{NoOperator, NoState};
 use viuer::{print as print_image_in_terminal, Config};
 use tracing::{error};
-use crate::cli::errors::CliError;
-use crate::questions_repository::question::{IdentifyImage, Question};
-use crate::questions_repository::service::{QuestionsRepository};
-use crate::cli::messages::CliMessage;
-use crate::cli::utils::{clear_screen, get_input, press_enter_to_continue};
-use crate::questions_repository::messages::QuestionsRepositoryMessage;
+use questions_repository::questions::{IdentifyImage, Question};
+use questions_repository::{QuestionsRepository, QuestionsRepositoryMessage};
+
+use crate::errors::CliError;
+use crate::messages::CliMessage;
+use crate::utils::{clear_screen, get_input, press_enter_to_continue};
 
 pub struct Cli {
     service_state: ServiceStateHandle<Self>,
