@@ -146,7 +146,7 @@ dependencies = [
  "async-trait",
  "overwatch-derive 0.1.0 (git+https://github.com/logos-co/Overwatch?rev=ac28d01)",
  "overwatch-rs",
- "questions_repository",
+ "repository",
  "thiserror",
  "tokio",
  "tracing",
@@ -522,7 +522,7 @@ dependencies = [
  "cli",
  "overwatch-derive 0.1.0 (git+https://github.com/logos-co/Overwatch?rev=ac28d01)",
  "overwatch-rs",
- "questions_repository",
+ "repository",
  "tracing",
 ]
 
@@ -1127,23 +1127,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "questions_repository"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "image",
- "overwatch-derive 0.1.0 (git+https://github.com/logos-co/Overwatch?rev=ac28d01)",
- "overwatch-rs",
- "rand",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1209,6 +1192,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "355ae415ccd3a04315d3f8246e86d67689ea74d88d915576e1589a351062a13b"
 dependencies = [
  "bitflags 2.6.0",
+]
+
+[[package]]
+name = "repository"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "image",
+ "overwatch-derive 0.1.0 (git+https://github.com/logos-co/Overwatch?rev=ac28d01)",
+ "overwatch-rs",
+ "rand",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

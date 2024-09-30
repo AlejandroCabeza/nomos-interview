@@ -2,6 +2,6 @@
 members = [
     "cli",
     "game",
-    "questions_repository"
+    "repository"
 ]
 resolver = "2"

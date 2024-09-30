@@ -5,8 +5,8 @@ use overwatch_rs::services::relay::{NoMessage, OutboundRelay};
 use overwatch_rs::services::state::{NoOperator, NoState};
 use viuer::{print as print_image_in_terminal, Config};
 use tracing::{error};
-use questions_repository::questions::{IdentifyImage, Question};
-use questions_repository::{QuestionsRepository, QuestionsRepositoryMessage};
+use repository::entities::{IdentifyImageQuestion, Entity};
+use repository::{Repository, RepositoryMessage};
 use tokio::sync::oneshot;
 use crate::errors::CliError;
 use crate::utils::{clear_screen, get_input, press_enter_to_continue};
@@ -36,9 +36,9 @@ impl ServiceCore for Cli {
             mut score
         } = self;
         let image_config = get_image_config();
-        let questions_repository_network_relay = service_state.overwatch_handle.relay::<QuestionsRepository>().connect().await?;
+        let repository_network_relay = service_state.overwatch_handle.relay::<Repository>().connect().await?;
 
-        get_cli_service_loop(&questions_repository_network_relay, &image_config, &mut score).await;
+        get_cli_service_loop(&repository_network_relay, &image_config, &mut score).await;
 
         service_state.overwatch_handle.shutdown().await;
         Ok(())
@@ -46,7 +46,7 @@ impl ServiceCore for Cli {
 }
 
 async fn get_cli_service_loop(
-    questions_repository_network_relay: &OutboundRelay<QuestionsRepositoryMessage>,
+    repository_network_relay: &OutboundRelay<RepositoryMessage>,
     image_config: &Config,
     score: &mut u16
 ) {
@@ -54,7 +54,7 @@ async fn get_cli_service_loop(
     loop {
         // Request Question
         let (sender, receiver) = oneshot::channel();
-        if let Err(error) = questions_repository_network_relay.send(QuestionsRepositoryMessage::Request(sender)).await {
+        if let Err(error) = repository_network_relay.send(RepositoryMessage::RequestEntity(sender)).await {
             // TODO: if more than 2 failures then exit? or maybe just warning.
             error!("Could not send Request to QuestionsRepository: {:?}", error);
             continue
@@ -65,7 +65,7 @@ async fn get_cli_service_loop(
             Ok(question) => {
                 // Formulate Question
                 let expected_answer = match question {
-                    Question::IdentifyImage(identify_image_question) => {
+                    Entity::IdentifyImageQuestion(identify_image_question) => {
                         clear_screen();
                         match formulate_identify_image_question(&identify_image_question, image_config).await {
                             Ok(answer) => answer,
@@ -104,7 +104,7 @@ async fn get_cli_service_loop(
     println!("> Exiting...")
 }
 
-async fn formulate_identify_image_question(question: &IdentifyImage, image_config: &Config) -> Result<String, CliError> {
+async fn formulate_identify_image_question(question: &IdentifyImageQuestion, image_config: &Config) -> Result<String, CliError> {
     let image = question.image().await.map_err(CliError::QuestionsRepositoryError)?;
     print_image_in_terminal(&image, image_config).map_err(CliError::RenderError)?;
     println!("> {}", question.prompt());

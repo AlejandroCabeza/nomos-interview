@@ -2,8 +2,8 @@ use rand::{Rng};
 use reqwest;
 use serde::Deserialize;
 
-use crate::backends::backend::QuestionsRepositoryBackend;
-use crate::questions::{Question, IdentifyImage};
+use crate::backends::backend::Backend;
+use crate::entities::{Entity, IdentifyImageQuestion};
 use crate::backends::errors::BackendError;
 
 #[derive(Deserialize, Debug)]
@@ -49,15 +49,15 @@ impl PokemonBackend {
         serde_json::from_str(body).unwrap()
     }
 
-    fn build_question_from_body(&self, body: &str) -> Question {
+    fn build_question_from_body(&self, body: &str) -> Entity {
         let pokemon = self.parse_body(body);
-        Question::IdentifyImage(IdentifyImage::new(String::from("Who's that Pokemon?"), pokemon.sprites.front_default, pokemon.name))
+        Entity::IdentifyImageQuestion(IdentifyImageQuestion::new(String::from("Who's that Pokemon?"), pokemon.sprites.front_default, pokemon.name))
     }
 }
 
 #[async_trait::async_trait]
-impl QuestionsRepositoryBackend for PokemonBackend {
-    async fn next(&self) -> Result<Question, BackendError> {
+impl Backend for PokemonBackend {
+    async fn next(&self) -> Result<Entity, BackendError> {
         let url = self.get_url_for_random_pokemon();
         let response = reqwest::get(&url).await.map_err(BackendError::RequestError)?;
         let body = response.text().await.map_err(BackendError::RequestError)?;

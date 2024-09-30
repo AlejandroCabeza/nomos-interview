@@ -3,7 +3,7 @@ use thiserror::Error;
 use crate::backends::errors::BackendError;
 
 #[derive(Error, Debug)]
-pub enum QuestionsRepositoryError {
+pub enum RepositoryError {
     #[error("backend error: {0}")]
     BackendError(#[from] BackendError),
     #[error("failed fetching image: {0}")]
