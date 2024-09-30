@@ -1,11 +1,9 @@
-mod cli;
-mod questions_repository;
-
+use tracing;
 use overwatch_derive::Services;
 use overwatch_rs::overwatch::OverwatchRunner;
 use overwatch_rs::services::handle::ServiceHandle;
-use crate::cli::service::Cli;
-use crate::questions_repository::service::QuestionsRepository;
+use cli::Cli;
+use questions_repository::QuestionsRepository;
 
 #[derive(Services)]
 pub struct Game {

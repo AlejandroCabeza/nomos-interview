@@ -1,18 +1,7 @@
-[package]
-name = "nomos-interview"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-overwatch-rs = { git = "https://github.com/logos-co/Overwatch", rev = "2f70806" }
-overwatch-derive = { git = "https://github.com/logos-co/Overwatch", rev = "ac28d01" }
-tracing = "0.1.40"
-async-trait = "0.1.83"
-rand = "0.8.5"
-reqwest = "0.12.7"
-tokio = "1.40.0"
-serde = { version = "1.0.210", features = ["derive"] }
-serde_json = "1.0.128"
-viuer = "0.7.1"
-image = "0.24.9"
-thiserror = "1.0.64"
+[workspace]
+members = [
+    "cli",
+    "game",
+    "questions_repository"
+]
+resolver = "2"

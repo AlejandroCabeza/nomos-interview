@@ -1,7 +1,7 @@
 use thiserror::Error;
 use viuer::ViuError;
 
-use crate::questions_repository::errors::QuestionsRepositoryError;
+use questions_repository::errors::QuestionsRepositoryError;
 
 #[derive(Error, Debug)]
 pub enum CliError {
