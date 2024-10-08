@@ -1,29 +1,17 @@
-use rand::{Rng};
+use rand::Rng;
 use reqwest;
-use serde::Deserialize;
-
 use crate::backends::backend::Backend;
 use crate::entities::{Entity, IdentifyImageQuestion};
 use crate::backends::errors::BackendError;
-
-#[derive(Deserialize, Debug)]
-struct Pokemon {
-    name: String,
-    sprites: PokemonSprites
-}
-
-#[derive(Deserialize, Debug)]
-struct PokemonSprites {
-    front_default: String,
-}
+use crate::backends::pokemon_serializers::Pokemon;
 
 #[derive(Debug)]
-pub struct PokemonBackend {
+pub struct WhoIsThatPokemonBackend {
     id_min: u16,
     id_max: u16,
 }
 
-impl PokemonBackend {
+impl WhoIsThatPokemonBackend {
     pub fn new(id_min: Option<u16>, id_max: Option<u16>) -> Self {
         Self {
             id_min: id_min.unwrap_or(0),
@@ -51,13 +39,13 @@ impl PokemonBackend {
 
     fn build_question_from_body(&self, body: &str) -> Entity {
         let pokemon = self.parse_body(body);
-        Entity::IdentifyImageQuestion(IdentifyImageQuestion::new(String::from("Who's that Pokemon?"), pokemon.sprites.front_default, pokemon.name))
+        Entity::IdentifyImageQuestion(IdentifyImageQuestion::new(String::from("Who's that Pokemon?"), pokemon.image_url(), pokemon.name()))
     }
 }
 
 #[async_trait::async_trait]
-impl Backend for PokemonBackend {
-    async fn next(&self) -> Result<Entity, BackendError> {
+impl Backend for WhoIsThatPokemonBackend {
+    async fn next(&mut self) -> Result<Entity, BackendError> {
         let url = self.get_url_for_random_pokemon();
         let response = reqwest::get(&url).await.map_err(BackendError::RequestError)?;
         let body = response.text().await.map_err(BackendError::RequestError)?;

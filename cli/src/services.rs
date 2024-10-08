@@ -8,8 +8,8 @@ use tracing::{error};
 use repository::entities::{IdentifyImageQuestion, Entity};
 use repository::{Repository, RepositoryMessage};
 use tokio::sync::oneshot;
-use crate::errors::CliError;
-use crate::utils::{clear_screen, get_input, press_enter_to_continue};
+use crate::errors::Error;
+use crate::utils::{clear_screen, continue_or_exit, get_input, press_enter_to_continue, ContinueCommand};
 
 pub struct Cli {
     service_state: ServiceStateHandle<Self>,
@@ -50,9 +50,9 @@ async fn get_cli_service_loop(
     image_config: &Config,
     score: &mut u16
 ) {
-    println!("Welcome to CliQuiz! To exit, type `quit`.");
+    println!("Welcome to Cli! To exit, type `quit`.");
     loop {
-        // Request Question
+        // Request Entity
         let (sender, receiver) = oneshot::channel();
         if let Err(error) = repository_network_relay.send(RepositoryMessage::RequestEntity(sender)).await {
             // TODO: if more than 2 failures then exit? or maybe just warning.
@@ -60,53 +60,74 @@ async fn get_cli_service_loop(
             continue
         }
 
-        // Receive Question
+        // Receive Entity
         match receiver.await {
-            Ok(question) => {
-                // Formulate Question
-                let expected_answer = match question {
+            Ok(entity) => {
+                match entity {
                     Entity::IdentifyImageQuestion(identify_image_question) => {
                         clear_screen();
-                        match formulate_identify_image_question(&identify_image_question, image_config).await {
+                        let expected_answer = match formulate_identify_image_question(&identify_image_question, image_config).await {
                             Ok(answer) => answer,
                             Err(error) => {
                                 println!("> An error happened. Let's try again!");
                                 error!("Could not formulate IdentifyImageQuestion: {:?}", error);
                                 continue
                             }
+                        };
+
+                        // Parse Answer
+                        let answer_input = get_input();
+                        match answer_input {
+                            Ok(answer) => {
+                                let answer = answer.trim().to_ascii_lowercase();
+                                if answer == "quit" {
+                                    println!("> You reached a score of: {}!", score);
+                                    break
+                                }
+                                check_answer(answer, expected_answer, score);
+                            }
+                            Err(error) => {
+                                println!("> Error parsing input");
+                                error!("Could not parse answer input: {}", error);
+                            }
                         }
+                    }
+                    Entity::NFTEntity(element) => {
+                        // clear_screen();
+                        println!("-> {}", &element.name());
+                        if let Ok(image) = element.image().await.map_err(Error::Repository) {
+                            if let Err(error) = print_image_in_terminal(&image, image_config) {
+                                error!("Error while printing image: {}", error);
+                            }
+                        }
+                        press_enter_to_continue();
                     }
                 };
-
-                // Parse Answer
-                let answer_input = get_input();
-                match answer_input {
-                    Ok(answer) => {
-                        let answer = answer.trim().to_ascii_lowercase();
-                        if answer == "quit" {
-                            println!("> You reached a score of: {}!", score);
-                            break
-                        }
-                        check_answer(answer, expected_answer, score);
-                    }
-                    Err(error) => {
-                        println!("> Error parsing input");
-                        error!("Could not parse answer input: {}", error);
-                    }
-                }
             }
             Err(error) => {
                 error!("Could not receive message: {}", error);
                 println!("An error happened. Let's try again!");
             }
         }
+
+        match continue_or_exit() {
+            Ok(ContinueCommand::Continue) => continue,
+            Ok(ContinueCommand::Exit) => {
+                println!("> Exiting...");
+                break
+            },
+            Err(error) => {
+                error!("Found an error when parsing input: {}", error);
+                println!("An error happened. Let's try again!");
+                continue
+            }
+        };
     }
-    println!("> Exiting...")
 }
 
-async fn formulate_identify_image_question(question: &IdentifyImageQuestion, image_config: &Config) -> Result<String, CliError> {
-    let image = question.image().await.map_err(CliError::QuestionsRepositoryError)?;
-    print_image_in_terminal(&image, image_config).map_err(CliError::RenderError)?;
+async fn formulate_identify_image_question(question: &IdentifyImageQuestion, image_config: &Config) -> Result<String, Error> {
+    let image = question.image().await.map_err(Error::Repository)?;
+    print_image_in_terminal(&image, image_config).map_err(Error::Render)?;
     println!("> {}", question.prompt());
     Ok(String::from(question.answer()))
 }

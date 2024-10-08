@@ -8,11 +8,24 @@ use tracing::error;
 
 use crate::backends::backend::Backend;
 use crate::backends::backend_message::BackendMessage;
-use crate::backends::pokemon::PokemonBackend;
+use crate::backends::nftscan::{NFTScanBackend};
+use crate::backends::pokemon::WhoIsThatPokemonBackend;
 use crate::messages::RepositoryMessage;
 use crate::entities::Entity;
 
 type BoxedBackend = Box<dyn Backend + Send>;
+
+
+fn build_who_is_that_pokemon_backend() -> BoxedBackend {
+    Box::new(WhoIsThatPokemonBackend::new(Some(0), Some(250)))
+}
+
+fn build_nft_scan_backend() -> BoxedBackend {
+    // TODO: Remove API Key
+    let api_key = String::from("");
+    let collection_address = String::from("");
+    Box::new(NFTScanBackend::new(api_key, collection_address))
+}
 
 pub struct Repository {
     service_state: ServiceStateHandle<Self>,
@@ -30,7 +43,7 @@ impl ServiceData for Repository {
 #[async_trait]
 impl ServiceCore for Repository {
     fn init(service_state: ServiceStateHandle<Self>) -> Result<Self, overwatch_rs::DynError> {
-        let backend: BoxedBackend = Box::new(PokemonBackend::new(Some(0), Some(250)));
+        let backend: BoxedBackend = build_nft_scan_backend();
         Ok(Self { service_state, backend })
     }
 
@@ -66,7 +79,10 @@ async fn get_repository_loop(
 fn update_backend(backend: &mut BoxedBackend, backend_message: BackendMessage) {
     match backend_message {
         BackendMessage::Pokemon => {
-            *backend = Box::new(PokemonBackend::new(Some(0), Some(250)));
+            *backend = build_who_is_that_pokemon_backend();
+        }
+        BackendMessage::NftScan => {
+            *backend = build_nft_scan_backend();
         }
     }
 }
