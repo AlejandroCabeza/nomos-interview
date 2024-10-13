@@ -12,3 +12,6 @@ async-trait = "0.1.83"
 viuer = "0.7.1"
 thiserror = "1.0.64"
 tokio = "1.40.0"
+
+[features]
+viuer_sixel = ["viuer/sixel"]

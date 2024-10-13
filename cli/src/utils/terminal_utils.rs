@@ -1,5 +1,6 @@
-use std::io::{self, stdin};
 use crate::errors::Error;
+use std::io;
+use std::io::stdin;
 
 pub fn clear_screen() {
     print!("\x1Bc");
@@ -10,27 +11,25 @@ pub fn get_input() -> Result<String, io::Error> {
     stdin().read_line(&mut input).map(|_| input)
 }
 
-pub fn press_enter_to_continue() {
-    println!("> Press Enter to continue <");
-    let _ = get_input();
+pub fn get_normalized_input() -> Result<String, io::Error> {
+    get_input().map(|input| input.trim().to_lowercase())
 }
 
 pub enum ContinueCommand {
     Continue,
-    Exit
+    Exit,
 }
 
 pub fn continue_or_exit() -> Result<ContinueCommand, Error> {
     println!("> Press Enter to continue, or type \"exit\" to quit <");
-    match get_input() {
+    match get_normalized_input() {
         Ok(input) => {
             if input == "exit" {
                 Ok(ContinueCommand::Exit)
-            }
-            else {
+            } else {
                 Ok(ContinueCommand::Continue)
             }
         }
-        Err(error) => Err(Error::Input(error))
+        Err(error) => Err(Error::IO(error)),
     }
 }

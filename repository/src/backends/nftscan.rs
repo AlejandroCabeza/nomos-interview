@@ -1,23 +1,22 @@
-use reqwest;
-use reqwest::{Client, RequestBuilder, Response};
 use crate::backends::backend::Backend;
 use crate::backends::errors::BackendError;
-use crate::backends::nftscan_serializers::{NFTScanParameters, NFTScanResponseSerializer, SearchNFTsSerializer, NFT};
-use crate::entities::{Entity, NFTEntity};
+use crate::backends::nftscan_serializers::{
+    NFTScanParameters, NFTScanResponseSerializer, SearchNFTsSerializer, NFT,
+};
+use crate::backends::nftscan_settings::NFTScanBackendSettings;
+use crate::entities::ranked_image::RankedImage;
+use reqwest;
+use reqwest::{Client, RequestBuilder, Response};
 
 #[derive(Debug)]
 pub struct NFTScanBackend {
     api_key: String,
     collection_address: String,
     nft_cache: Vec<NFT>,
-    cursor: Option<String>
+    cursor: Option<String>,
 }
 
 impl NFTScanBackend {
-    pub fn new(api_key: String, collection_address: String) -> Self {
-        Self { api_key, collection_address, nft_cache: vec![], cursor: None }
-    }
-
     const fn get_auth_header_key() -> &'static str {
         "X-API-KEY"
     }
@@ -27,21 +26,34 @@ impl NFTScanBackend {
         "https://restapi.nftscan.com/api/v2/assets/filters"
     }
 
-    async fn serialize_response(&self, response: Response) -> Result<NFTScanResponseSerializer<SearchNFTsSerializer>, BackendError> {
+    async fn serialize_response(
+        &self,
+        response: Response,
+    ) -> Result<NFTScanResponseSerializer<SearchNFTsSerializer>, BackendError> {
         Ok(response.json().await?)
     }
-    
+
     async fn build_request(&self, with_cursor: bool) -> Result<RequestBuilder, BackendError> {
         let url = Self::build_search_nfts_url();
-        let cursor = if with_cursor { self.cursor.clone() } else { None };
-        let parameters = NFTScanParameters::new(vec![self.collection_address.clone()], String::from("false"), cursor);
-        let client = Client::builder().build().map_err(BackendError::RequestError)?;
+        let cursor = if with_cursor {
+            self.cursor.clone()
+        } else {
+            None
+        };
+        let parameters = NFTScanParameters::new(
+            vec![self.collection_address.clone()],
+            String::from("false"),
+            cursor,
+        );
+        let client = Client::builder()
+            .build()
+            .map_err(BackendError::RequestError)?;
         Ok(client
             .post(url)
             .json(&parameters)
             .header(Self::get_auth_header_key(), &self.api_key))
     }
-    
+
     async fn _fill_current_collection(&mut self, response: Response) -> Result<(), BackendError> {
         let response = self.serialize_response(response).await?;
         self.cursor = Some(response.cursor());
@@ -56,25 +68,33 @@ impl NFTScanBackend {
                 self._fill_current_collection(response).await?;
                 Ok(())
             }
-            Err(error) => Err(BackendError::RequestError(error))
+            Err(error) => Err(BackendError::RequestError(error)),
         }
     }
 }
 
 #[async_trait::async_trait]
 impl Backend for NFTScanBackend {
-    async fn next(&mut self) -> Result<Entity, BackendError> {
+    type Settings = NFTScanBackendSettings;
+    type Entity = RankedImage;
+
+    fn new(settings: Self::Settings) -> Self {
+        Self {
+            api_key: settings.api_key,
+            collection_address: settings.collection_address,
+            nft_cache: vec![],
+            cursor: None,
+        }
+    }
+
+    async fn next(&mut self) -> Result<Self::Entity, BackendError> {
         if self.nft_cache.is_empty() {
             self.fill_current_collection().await?;
         }
 
         match self.nft_cache.pop() {
-            Some(item) => {
-                Ok(Entity::NFTEntity(NFTEntity::from(item)))
-            }
-            None => {
-                Err(BackendError::NoMoreEntities)
-            }
+            Some(item) => Ok(RankedImage::from(item)),
+            None => Err(BackendError::NoMoreEntities),
         }
     }
 }
