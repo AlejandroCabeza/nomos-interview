@@ -1,15 +1,15 @@
+use crate::backends::errors::BackendError;
 use image::ImageError;
 use thiserror::Error;
-use crate::backends::errors::BackendError;
 
 #[derive(Error, Debug)]
 pub enum RepositoryError {
-    #[error("backend error: {0}")]
+    #[error(transparent)]
     BackendError(#[from] BackendError),
-    #[error("failed fetching image: {0}")]
+    #[error(transparent)]
     FetchingImage(reqwest::Error),
-    #[error("failed parsing image: {0}")]
+    #[error(transparent)]
     ParsingImage(reqwest::Error),
-    #[error("failed loading image: {0}")]
-    LoadingImage(#[from] ImageError)
+    #[error(transparent)]
+    LoadingImage(#[from] ImageError),
 }

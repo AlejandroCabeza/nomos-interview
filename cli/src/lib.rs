@@ -1,6 +1,6 @@
-mod errors;
+pub mod backends;
+pub mod errors;
 pub mod services;
-mod utils;
-mod backends;
+pub mod utils;
 
 pub use crate::services::Cli;

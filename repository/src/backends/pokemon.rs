@@ -1,9 +1,10 @@
-use rand::Rng;
-use reqwest;
 use crate::backends::backend::Backend;
-use crate::entities::{Entity, IdentifyImageQuestion};
 use crate::backends::errors::BackendError;
 use crate::backends::pokemon_serializers::Pokemon;
+use crate::backends::pokemon_settings::WhoIsThatPokemonBackendSettings;
+use crate::entities::image_guess::ImageGuess;
+use rand::Rng;
+use reqwest;
 
 #[derive(Debug)]
 pub struct WhoIsThatPokemonBackend {
@@ -12,13 +13,6 @@ pub struct WhoIsThatPokemonBackend {
 }
 
 impl WhoIsThatPokemonBackend {
-    pub fn new(id_min: Option<u16>, id_max: Option<u16>) -> Self {
-        Self {
-            id_min: id_min.unwrap_or(0),
-            id_max: id_max.unwrap_or(151)
-        }
-    }
-
     fn get_random_pokemon_id(&self) -> u16 {
         let mut thread_rng = rand::thread_rng();
         thread_rng.gen_range(self.id_min..self.id_max)
@@ -37,17 +31,28 @@ impl WhoIsThatPokemonBackend {
         serde_json::from_str(body).unwrap()
     }
 
-    fn build_question_from_body(&self, body: &str) -> Entity {
-        let pokemon = self.parse_body(body);
-        Entity::IdentifyImageQuestion(IdentifyImageQuestion::new(String::from("Who's that Pokemon?"), pokemon.image_url(), pokemon.name()))
+    fn build_question_from_body(&self, body: &str) -> ImageGuess {
+        self.parse_body(body).into()
     }
 }
 
 #[async_trait::async_trait]
 impl Backend for WhoIsThatPokemonBackend {
-    async fn next(&mut self) -> Result<Entity, BackendError> {
+    type Settings = WhoIsThatPokemonBackendSettings;
+    type Entity = ImageGuess;
+
+    fn new(settings: Self::Settings) -> Self {
+        Self {
+            id_min: settings.id_min,
+            id_max: settings.id_max,
+        }
+    }
+
+    async fn next(&mut self) -> Result<Self::Entity, BackendError> {
         let url = self.get_url_for_random_pokemon();
-        let response = reqwest::get(&url).await.map_err(BackendError::RequestError)?;
+        let response = reqwest::get(&url)
+            .await
+            .map_err(BackendError::RequestError)?;
         let body = response.text().await.map_err(BackendError::RequestError)?;
         Ok(self.build_question_from_body(body.as_str()))
     }

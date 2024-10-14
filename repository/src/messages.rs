@@ -1,13 +1,13 @@
-use std::fmt::{Debug};
 use overwatch_rs::services::relay::RelayMessage;
+use std::fmt::Debug;
 use tokio::sync::oneshot::Sender;
-use crate::backends::backend_message::BackendMessage;
-use crate::entities::Entity;
 
 #[derive(Debug)]
-pub enum RepositoryMessage {
-    UpdateBackend(BackendMessage),
-    RequestEntity(Sender<Entity>)
+pub enum RepositoryMessage<B>
+where
+    B: Debug,
+{
+    RequestEntity(Sender<B>),
 }
 
-impl RelayMessage for RepositoryMessage {}
+impl<B> RelayMessage for RepositoryMessage<B> where B: Debug + 'static {}
