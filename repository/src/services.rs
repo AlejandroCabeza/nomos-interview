@@ -82,9 +82,7 @@ where
         backend: &mut RepositoryBackend,
         inbound_relay: &mut InboundRelay<RepositoryMessage<RepositoryBackend::Entity>>,
     ) {
-        println!("> Get repo loop");
         while let Some(message) = inbound_relay.recv().await {
-            println!("> Received message");
             match message {
                 RepositoryMessage::RequestEntity(sender) => {
                     Self::request_entity(backend, sender).await;

@@ -12,12 +12,12 @@ use tokio::sync::oneshot;
 use tracing::error;
 use viuer::{print as print_image_in_terminal, Config};
 
-pub struct Gallery {
-    repository_network_relay: OutboundRelay<RepositoryMessage<RankedImage>>,
+pub struct Gallery<Entity: Debug> {
+    repository_network_relay: OutboundRelay<RepositoryMessage<Entity>>,
     image_config: Config,
 }
 
-impl Debug for Gallery {
+impl<Entity: Debug> Debug for Gallery<Entity> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let image_config_debug = debug_image_config(&self.image_config);
         f.debug_struct("ImageVisualizerBackend")
@@ -31,17 +31,16 @@ impl Debug for Gallery {
 }
 
 #[async_trait]
-impl Backend for Gallery {
+impl<Entity> Backend<Entity> for Gallery<Entity>
+where
+    Entity: RankedImage + Send + Sync + Debug,
+{
     type Settings = GallerySettings;
-    type Entity = RankedImage;
 
     fn new(
         settings: Self::Settings,
-        outbound_relay: OutboundRelay<RepositoryMessage<Self::Entity>>,
-    ) -> Self
-    where
-        Self::Entity: Debug,
-    {
+        outbound_relay: OutboundRelay<RepositoryMessage<Entity>>,
+    ) -> Self {
         Self {
             repository_network_relay: outbound_relay,
             image_config: settings.image_config,
@@ -52,7 +51,7 @@ impl Backend for Gallery {
         println!("> Welcome to CliGallery!")
     }
 
-    async fn request_entity(&self) -> Result<Self::Entity, BackendError> {
+    async fn request_entity(&self) -> Result<Entity, BackendError> {
         let (sender, receiver) = oneshot::channel();
         match self
             .repository_network_relay
@@ -72,11 +71,11 @@ impl Backend for Gallery {
         }
     }
 
-    async fn handle_entity(&mut self, entity: Self::Entity) -> Result<(), BackendError> {
+    async fn handle_entity(&mut self, entity: Entity) -> Result<(), BackendError> {
         clear_screen();
         let image = entity.image().await.map_err(BackendError::Repository)?;
         print_image_in_terminal(&image, &self.image_config).map_err(BackendError::ImageRender)?;
-        println!("> On Display: {}", entity.name());
+        println!("> On Display: {}", entity.description());
         Ok(())
     }
 }

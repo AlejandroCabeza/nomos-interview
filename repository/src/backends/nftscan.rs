@@ -4,7 +4,6 @@ use crate::backends::nftscan_serializers::{
     NFTScanParameters, NFTScanResponseSerializer, SearchNFTsSerializer, NFT,
 };
 use crate::backends::nftscan_settings::NFTScanBackendSettings;
-use crate::entities::ranked_image::RankedImage;
 use reqwest;
 use reqwest::{Client, RequestBuilder, Response};
 
@@ -76,7 +75,7 @@ impl NFTScanBackend {
 #[async_trait::async_trait]
 impl Backend for NFTScanBackend {
     type Settings = NFTScanBackendSettings;
-    type Entity = RankedImage;
+    type Entity = NFT;
 
     fn new(settings: Self::Settings) -> Self {
         Self {
@@ -93,7 +92,7 @@ impl Backend for NFTScanBackend {
         }
 
         match self.nft_cache.pop() {
-            Some(item) => Ok(RankedImage::from(item)),
+            Some(item) => Ok(item),
             None => Err(BackendError::NoMoreEntities),
         }
     }

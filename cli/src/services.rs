@@ -18,18 +18,11 @@ impl<BackendSettings> CliSettings<BackendSettings> {
     }
 }
 
-pub struct Cli<CliBackend, RepositoryBackend>
+impl<CliBackend, RepositoryBackend, BackendEntity> ServiceData
+    for Cli<CliBackend, RepositoryBackend, BackendEntity>
 where
-    CliBackend: Backend,
-    CliBackend::Settings: Clone,
-    RepositoryBackend: repository::backends::backend::Backend,
-{
-    service_state: ServiceStateHandle<Self>,
-}
-
-impl<CliBackend, RepositoryBackend> ServiceData for Cli<CliBackend, RepositoryBackend>
-where
-    CliBackend: Backend,
+    BackendEntity: Debug,
+    CliBackend: Backend<BackendEntity>,
     CliBackend::Settings: Clone,
     RepositoryBackend: repository::backends::backend::Backend,
 {
@@ -40,16 +33,25 @@ where
     type Message = NoMessage;
 }
 
-#[async_trait::async_trait]
-impl<CliBackend, RepositoryBackend> ServiceCore for Cli<CliBackend, RepositoryBackend>
+pub struct Cli<CliBackend, RepositoryBackend, BackendEntity>
 where
-    CliBackend: Backend + Send + Debug + 'static,
+    BackendEntity: Debug,
+    CliBackend: Backend<BackendEntity>,
+    CliBackend::Settings: Clone,
+    RepositoryBackend: repository::backends::backend::Backend,
+{
+    service_state: ServiceStateHandle<Self>,
+}
+
+#[async_trait::async_trait]
+impl<CliBackend, RepositoryBackend, BackendEntity> ServiceCore
+    for Cli<CliBackend, RepositoryBackend, BackendEntity>
+where
+    BackendEntity: Debug,
+    CliBackend: Backend<BackendEntity> + Send + Debug + 'static,
     CliBackend::Settings: Send + Sync + Clone,
-    CliBackend::Entity: Debug,
-    RepositoryBackend: repository::backends::backend::Backend<Entity = CliBackend::Entity>
-        + Send
-        + Debug
-        + 'static,
+    RepositoryBackend:
+        repository::backends::backend::Backend<Entity = BackendEntity> + Send + Debug + 'static,
     RepositoryBackend::Settings: Send + Sync + Clone,
     RepositoryBackend::Entity: Debug,
 {
@@ -66,7 +68,7 @@ where
             .connect()
             .await?;
 
-        let mut backend = <CliBackend as Backend>::new(backend_settings, outbound_relay);
+        let mut backend = CliBackend::new(backend_settings, outbound_relay);
         backend.run().await;
 
         service_state.overwatch_handle.shutdown().await;

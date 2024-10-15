@@ -1,7 +1,7 @@
 use crate::errors::RepositoryError;
 use image::DynamicImage;
 
-pub async fn url_to_dynamic_image_url(url: &String) -> Result<DynamicImage, RepositoryError> {
+pub async fn url_to_dynamic_image_url(url: &str) -> Result<DynamicImage, RepositoryError> {
     let response = reqwest::get(url)
         .await
         .map_err(RepositoryError::FetchingImage);

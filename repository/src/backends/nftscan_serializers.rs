@@ -1,3 +1,5 @@
+use crate::entities::ranked_image::RankedImage;
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug)]
@@ -5,44 +7,55 @@ pub struct NFTScanParameters {
     contract_address_list: Vec<String>,
     show_attribute: String,
     cursor: Option<String>,
-    limit: u8
+    limit: u8,
 }
 
 impl NFTScanParameters {
-    pub fn new(contract_address_list: Vec<String>, show_attribute: String, cursor: Option<String>) -> NFTScanParameters {
-        Self { contract_address_list, show_attribute, cursor, limit: 3 }
+    pub fn new(
+        contract_address_list: Vec<String>,
+        show_attribute: String,
+        cursor: Option<String>,
+    ) -> NFTScanParameters {
+        Self {
+            contract_address_list,
+            show_attribute,
+            cursor,
+            limit: 3,
+        }
     }
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct NFTScanResponseSerializer<T> {
     code: u16,
     msg: Option<String>,
-    data: T
+    data: T,
 }
 
 impl NFTScanResponseSerializer<SearchNFTsSerializer> {
     pub fn collection(self) -> Vec<NFT> {
         self.data.content
     }
-    
+
     pub fn cursor(&self) -> String {
         self.data.next.clone()
     }
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct SearchNFTsSerializer {
     total: u16,
     next: String,
-    content: Vec<NFT>
+    content: Vec<NFT>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct NFT {
     name: String,
     image_uri: String,
-    rarity_rank: u16
+    rarity_rank: u16,
 }
 
 impl NFT {
@@ -56,5 +69,20 @@ impl NFT {
 
     pub fn rarity_rank(&self) -> u16 {
         self.rarity_rank
+    }
+}
+
+#[async_trait]
+impl RankedImage for NFT {
+    fn description(&self) -> &str {
+        &self.name
+    }
+
+    fn image_uri(&self) -> &str {
+        &self.image_uri
+    }
+
+    fn rarity_rank(&self) -> &u16 {
+        &self.rarity_rank
     }
 }
