@@ -12,13 +12,13 @@ use tokio::sync::oneshot;
 use tracing::error;
 use viuer::{print as print_image_in_terminal, Config};
 
-pub struct QuestionsBackend {
-    repository_network_relay: OutboundRelay<RepositoryMessage<ImageGuess>>,
+pub struct ImageGuessBackend<Entity: Debug> {
+    repository_network_relay: OutboundRelay<RepositoryMessage<Entity>>,
     image_config: Config,
     score: u16,
 }
 
-impl Debug for QuestionsBackend {
+impl<Entity: Debug> Debug for ImageGuessBackend<Entity> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let image_config_debug = debug_image_config(&self.image_config);
         f.debug_struct("QuestionsBackend")
@@ -32,10 +32,13 @@ impl Debug for QuestionsBackend {
     }
 }
 
-impl QuestionsBackend {
+impl<Entity> ImageGuessBackend<Entity>
+where
+    Entity: ImageGuess + Sync + Debug,
+{
     async fn formulate_identify_image_question(
         &self,
-        question: ImageGuess,
+        question: Entity,
     ) -> Result<String, BackendError> {
         let image = question.image().await.map_err(BackendError::Repository)?;
         print_image_in_terminal(&image, &self.image_config).map_err(BackendError::ImageRender)?;
@@ -70,13 +73,15 @@ impl QuestionsBackend {
 }
 
 #[async_trait]
-impl Backend for QuestionsBackend {
+impl<Entity> Backend<Entity> for ImageGuessBackend<Entity>
+where
+    Entity: ImageGuess + Send + Sync + Debug,
+{
     type Settings = QuestionsBackendSettings;
-    type Entity = ImageGuess;
 
     fn new(
         settings: Self::Settings,
-        outbound_relay: OutboundRelay<RepositoryMessage<Self::Entity>>,
+        outbound_relay: OutboundRelay<RepositoryMessage<Entity>>,
     ) -> Self {
         Self {
             repository_network_relay: outbound_relay,
@@ -89,7 +94,7 @@ impl Backend for QuestionsBackend {
         println!("> Welcome to CliQuiz!")
     }
 
-    async fn request_entity(&self) -> Result<Self::Entity, BackendError> {
+    async fn request_entity(&self) -> Result<Entity, BackendError> {
         let (sender, receiver) = oneshot::channel();
         match self
             .repository_network_relay
@@ -109,7 +114,7 @@ impl Backend for QuestionsBackend {
         }
     }
 
-    async fn handle_entity(&mut self, entity: Self::Entity) -> Result<(), BackendError> {
+    async fn handle_entity(&mut self, entity: Entity) -> Result<(), BackendError> {
         clear_screen();
         let expected_answer = self.formulate_identify_image_question(entity).await?;
         let answer = self.get_answer_input()?;

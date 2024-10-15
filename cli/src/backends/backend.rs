@@ -7,16 +7,13 @@ use std::fmt::Debug;
 use tracing::error;
 
 #[async_trait]
-pub trait Backend {
+pub trait Backend<Entity: Debug> {
     type Settings;
-    type Entity;
 
     fn new(
         settings: Self::Settings,
-        outbound_relay: OutboundRelay<RepositoryMessage<Self::Entity>>,
-    ) -> Self
-    where
-        Self::Entity: Debug;
+        outbound_relay: OutboundRelay<RepositoryMessage<Entity>>,
+    ) -> Self;
 
     async fn _init(&self);
 
@@ -47,8 +44,8 @@ pub trait Backend {
         }
     }
 
-    async fn request_entity(&self) -> Result<Self::Entity, BackendError>;
-    async fn handle_entity(&mut self, entity: Self::Entity) -> Result<(), BackendError>;
+    async fn request_entity(&self) -> Result<Entity, BackendError>;
+    async fn handle_entity(&mut self, entity: Entity) -> Result<(), BackendError>;
     async fn _finalize(&mut self) {}
 
     async fn run(&mut self) {
