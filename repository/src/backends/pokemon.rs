@@ -1,7 +1,7 @@
 use crate::backends::backend::Backend;
 use crate::backends::errors::BackendError;
 use crate::backends::pokemon_serializers::Pokemon;
-use crate::backends::pokemon_settings::WhoIsThatPokemonBackendSettings;
+use crate::backends::pokemon_settings::RandomPokemonBackendSettings;
 use rand::Rng;
 use reqwest;
 
@@ -37,7 +37,7 @@ impl RandomPokemonBackend {
 
 #[async_trait::async_trait]
 impl Backend for RandomPokemonBackend {
-    type Settings = WhoIsThatPokemonBackendSettings;
+    type Settings = RandomPokemonBackendSettings;
     type Entity = Pokemon;
 
     fn new(settings: Self::Settings) -> Self {

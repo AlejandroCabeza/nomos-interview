@@ -1,12 +1,12 @@
 [package]
-name = "game"
+name = "persistence"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cli = { path = "../cli" }
-repository = { path = "../repository" }
-persistence = { path = "../persistence" }
 overwatch-rs = { git = "https://github.com/logos-co/Overwatch", rev = "2f70806" }
 overwatch-derive = { git = "https://github.com/logos-co/Overwatch", rev = "ac28d01" }
 tracing = "0.1.40"
+async-trait = "0.1.83"
+sqlx = { version = "0.8.2", features = ["runtime-tokio", "sqlite"] }
+thiserror = "1.0.64"

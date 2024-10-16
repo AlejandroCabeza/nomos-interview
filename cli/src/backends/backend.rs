@@ -1,6 +1,7 @@
 use crate::backends::errors::BackendError;
 use crate::utils::terminal_utils::{continue_or_exit, ContinueCommand};
 use async_trait::async_trait;
+use overwatch_rs::overwatch::handle::OverwatchHandle;
 use overwatch_rs::services::relay::OutboundRelay;
 use repository::RepositoryMessage;
 use std::fmt::Debug;
@@ -9,14 +10,15 @@ use tracing::error;
 #[async_trait]
 pub trait Backend<Entity: Debug> {
     type Settings;
+    type PersistenceMessage;
 
     fn new(
         settings: Self::Settings,
-        outbound_relay: OutboundRelay<RepositoryMessage<Entity>>,
+        overwatch_handle: OverwatchHandle,
+        repository_relay: OutboundRelay<RepositoryMessage<Entity>>,
     ) -> Self;
 
-    async fn _init(&self);
-
+    async fn _init(&mut self) {}
     async fn _main_loop(&mut self) {
         loop {
             let entity = match self.request_entity().await {
@@ -43,10 +45,10 @@ pub trait Backend<Entity: Debug> {
             };
         }
     }
+    async fn _finalize(&mut self) {}
 
     async fn request_entity(&self) -> Result<Entity, BackendError>;
     async fn handle_entity(&mut self, entity: Entity) -> Result<(), BackendError>;
-    async fn _finalize(&mut self) {}
 
     async fn run(&mut self) {
         self._init().await;
