@@ -25,7 +25,6 @@ impl NFTScanParameters {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct NFTScanResponseSerializer<T> {
     code: u16,
@@ -43,7 +42,6 @@ impl NFTScanResponseSerializer<SearchNFTsSerializer> {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct SearchNFTsSerializer {
     total: u16,

@@ -1,7 +1,7 @@
 mod nft;
 mod pokemon;
 
-use crate::nft::NFTViewer;
+use crate::nft::NFTGallery;
 use crate::pokemon::WhoIsThatPokemonGame;
 use std::env::var;
 use std::io;
@@ -18,11 +18,14 @@ fn main() {
         .expect("Failed to read line");
 
     match choice.trim() {
-        "1" => WhoIsThatPokemonGame::run(),
+        "1" => {
+            let database_url = var("DATABASE_URL").unwrap();
+            WhoIsThatPokemonGame::run(database_url);
+        }
         "2" => {
             let api_key = var("API_KEY__NFT_SCAN").unwrap();
             let collection_address = var("ADDRESS__DEATHBAT").unwrap();
-            NFTViewer::run(api_key, collection_address)
+            NFTGallery::run(api_key, collection_address)
         }
         _ => {
             println!("Invalid choice. Exiting...");

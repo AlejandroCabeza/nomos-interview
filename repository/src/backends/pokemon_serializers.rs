@@ -20,10 +20,10 @@ impl ImageGuess for Pokemon {
     }
 
     fn image_uri(&self) -> &str {
-        &self.sprites.front_default.as_str()
+        self.sprites.front_default.as_str()
     }
 
     fn answer(&self) -> &str {
-        &self.name.as_str()
+        self.name.as_str()
     }
 }

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 repository = { path = "../repository" }
+persistence = { path = "../persistence" }
 overwatch-rs = { git = "https://github.com/logos-co/Overwatch", rev = "2f70806" }
 overwatch-derive = { git = "https://github.com/logos-co/Overwatch", rev = "ac28d01" }
 tracing = "0.1.40"
